@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hot or Not</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 50px;
+    }
+    .photo-container {
+      display: flex;
+      justify-content: center;
+    }
+    .photo-container img {
+      margin: 0 20px;
+      width: 300px;
+      height: 300px;
+      object-fit: cover;
+      cursor: pointer;
+    }
+    .results {
+      margin-top: 30px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Hot or Not</h1>
+  <div class="photo-container" id="photoContainer">
+    <!-- Photos will be injected here by JavaScript -->
+  </div>
+  <div class="results" id="results">
+    <!-- Results will be displayed here -->
+  </div>
+
+  <script>
+    let photoContainer = document.getElementById('photoContainer');
+    let resultsDiv = document.getElementById('results');
+
+    function fetchPhotos() {
+      fetch('/photos')
+        .then(response => response.json())
+        .then(data => {
+          if (data.photo1 && data.photo2) {
+            photoContainer.innerHTML = `
+              <img src="/images/${data.photo1}" alt="${data.photo1}" data-name="${data.photo1}">
+              <img src="/images/${data.photo2}" alt="${data.photo2}" data-name="${data.photo2}">
+            `;
+          } else {
+            fetchResults();
+          }
+        })
+        .catch(err => {
+          console.error('Error fetching photos:', err);
+        });
+    }
+
+    function submitVote(winner, loser) {
+      fetch('/vote', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ winner, loser })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.bestPhoto) {
+          displayResults(data);
+        } else {
+          fetchPhotos();
+        }
+      });
+    }
+
+    function fetchResults() {
+      fetch('/results')
+        .then(response => response.json())
+        .then(data => {
+          displayResults(data);
+        });
+    }
+
+    function displayResults(data) {
+      resultsDiv.innerHTML = `
+        <h2>Best Photo: ${data.bestPhoto}</h2>
+        <ul>
+          ${Object.keys(data.scores).map(photo => `<li>${photo}: ${data.scores[photo]}</li>`).join('')}
+        </ul>
+      `;
+    }
+
+    photoContainer.addEventListener('click', event => {
+      if (event.target.tagName === 'IMG') {
+        let winner = event.target.dataset.name;
+        let loser = [...photoContainer.querySelectorAll('img')]
+          .find(img => img.dataset.name !== winner).dataset.name;
+        submitVote(winner, loser);
+      }
+    });
+
+    fetchPhotos();
+  </script>
+</body>
+</html>
