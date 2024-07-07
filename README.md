@@ -24,3 +24,11 @@ hot-or-not/
 Dans le répertoire racine, exécute :
 npm init -y
 npm install express
+
+
+4. Démarrer le serveur
+Dans le terminal, exécute :
+node server.js
+
+
+Visite "http://localhost:3000" dans ton navigateur pour voir et utiliser l'application.
